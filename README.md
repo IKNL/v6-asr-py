@@ -7,7 +7,7 @@
 
 --------------------
 
-# v6-boilerplate-py
+# v6-asr-py
 This algoithm is part of the [vantage6](https://vantage6.ai) solution. Vantage6 allowes to execute computations on federated datasets. This repository provides a boilerplate for new algorithms.
 
 ## Usage
