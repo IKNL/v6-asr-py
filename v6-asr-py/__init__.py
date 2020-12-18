@@ -1,12 +1,12 @@
 import time
 import pandas as pd
 
-from vantage6.common import info  # , error, warning, debug
+from vantage6.common import info, warning  # , error, warning, debug
 from vantage6.client import Client
 
 
 def master(client: Client, data, incidence, population, gender, ageclass,
-           prefacture, standard_popultation, organization_ids=None):
+           prefacture, standard_population, organization_ids=None):
     """Master algoritm.
 
     The master algorithm is the chair of the Round Robin, which makes
@@ -38,7 +38,7 @@ def master(client: Client, data, incidence, population, gender, ageclass,
 
     # while we wait, lets compute the relative population dataframe
     info('Calculating relative population')
-    rel_pop = relative_population(standard_popultation,
+    rel_pop = relative_population(standard_population,
                                   population, ageclass)
 
     # Collect results
@@ -160,8 +160,6 @@ def relative_population(data, population, ageclass):
         Population per age category
     ageclass : pd.DataFrame column
         The different age classes
-    gender : pd.DataFrame, optional
-        This contains the different genders, by default None
 
     Returns
     -------
@@ -234,45 +232,40 @@ def RPC_preliminairy_results(data, incidence, population, gender, ageclass,
         indifferent of ageclass and gender) as well as the summed incidence
         (this is also indifferent of ageclass and gender)
     """
-
-    if prefacture is not None:
-
+    # disclosive check
+    n = len(data)
+    if n < 10:
+        warning('Dataset is too small: len(data) < 10. Exiting')
+        return
+    if prefacture:
         people_at_risk = data.pivot(
             index=[prefacture, gender],
             columns=ageclass,
             values=population
         ).sum(axis=1)
-
         incidence_per_prefacture = data.pivot(
             index=[prefacture, gender],
             columns=ageclass,
             values=incidence
         ).sum(axis=1)
-
         crd_rate = (incidence_per_prefacture.div(people_at_risk))*100000
     else:
-
         people_at_risk = data.pivot_table(
             index=gender,
             columns=ageclass,
             values=population
         ).sum(axis=1)
-
         incidence_per_gender_age = data.pivot_table(
             index=gender,
             columns=ageclass,
             values=incidence
         ).sum(axis=1)
-
         crd_rate = (incidence_per_gender_age.div(people_at_risk))*100000
-
     incidence_pop = data.pivot(index=gender, columns=ageclass,
                                values=population)
     total_local_pop = incidence_pop.sum(axis=1)
-
     total_local_inc = data.pivot(index=gender, columns=ageclass,
                                  values=incidence).sum(axis=1)
-
     return {
         "crude_rate": crd_rate,
         "incidence_population": incidence_pop,
@@ -304,7 +297,10 @@ def RPC_adjusted_rate(data, gender, ageclass, incidence, rel_pop,
         Standardised population of 100000
     people_at_risk : pd.DataFrame
         Combined dataframe of all the people at risk of catching the disease
-        across all nodes.
+        across all nodes
+    population: pd.DataFrame column
+        Column containing the population per age category and gender at the
+        node
 
     Returns
     -------
@@ -314,6 +310,12 @@ def RPC_adjusted_rate(data, gender, ageclass, incidence, rel_pop,
         global population. Depending on how many genders are listed, these will
         be of length len(np.unique(data[gender])).
     """
+    # dislcosive check
+    n = len(data)
+    if n < 10:
+        warning('Dataset is too small: len(data) < 10. Exiting.')
+        return
+
     incidence_per_ageclass_and_gender = data.pivot(
         index=gender,
         columns=ageclass,

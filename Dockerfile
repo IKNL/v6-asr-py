@@ -1,5 +1,5 @@
 # basic python3 image as base
-FROM harbor.vantage6.ai/algorithms/algorithm-base
+FROM harbor.vantage6.ai/algorithms/algorithm-base:2.0
 
 # This is a placeholder that should be overloaded by invoking
 # docker build with '--build-arg PKG_NAME=...'
@@ -8,6 +8,7 @@ ARG PKG_NAME="v6-asr-py"
 # install federated algorithm
 COPY . /app
 RUN pip install /app
+# RUN pip install pandas==1.1.0
 
 ENV PKG_NAME=${PKG_NAME}
 
