@@ -70,7 +70,8 @@ def master(client: Client, data, incidence, population, gender, ageclass,
                 "ageclass": ageclass,
                 "rel_pop": rel_pop,
                 "people_at_risk": people_at_risk_results,
-                "population": population
+                "population": population,
+                "prefacture": prefacture
             }
         },
         organization_ids=organization_ids
@@ -121,7 +122,7 @@ def combined_adjusted_rate(adj_rate):
     pd.core.frame.DataFrame
         Dataframe containing the combined values of the RPC_adj_rate
     """
-    return pd.DataFrame(map(sum, zip(*adj_rate)))
+    return sum([series.droplevel(0) for series in adj_rate])
 
 
 def people_at_risk(dataframe_list):
@@ -185,7 +186,8 @@ def combined_crude_rate(total_incidence, grouped_populations):
     total_incidence : List
         This is the sum of the incidence per node which is sent from each node
         to the master method. This is grouped in the form of a list.
-        This is calculated from the
+        This is taken from each node as incidence_population using the
+        RPC_preliminairy_results method.
     grouped_populations : List
         This is the sum of the populations per node which is sent from each
         node to the master method. This is grouped in the form of a list.
@@ -275,7 +277,7 @@ def RPC_preliminairy_results(data, incidence, population, gender, ageclass,
 
 
 def RPC_adjusted_rate(data, gender, ageclass, incidence, rel_pop,
-                      people_at_risk, population):
+                      people_at_risk, population, prefacture):
     """Calculates the adjusted rate for the ASR.
        This does this by first creating a pivot of the local node's data using
        the incidence by age class and gender. Then it is multiplied by rel_pop,
@@ -317,7 +319,7 @@ def RPC_adjusted_rate(data, gender, ageclass, incidence, rel_pop,
         return
 
     incidence_per_ageclass_and_gender = data.pivot(
-        index=gender,
+        index=[prefacture, gender],
         columns=ageclass,
         values=incidence
     )
